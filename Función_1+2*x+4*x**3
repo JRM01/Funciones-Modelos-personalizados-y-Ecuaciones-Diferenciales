@@ -1,0 +1,40 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
+
+
+def f(x):
+    return 1+2*x+4*x**3
+
+
+x_train = np.linspace(-1, 1, 1000)
+y_train = f(x_train)
+
+
+model = Sequential()
+model.add(Dense(64, activation='relu', input_shape=(1,)))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(1))
+
+optimizer = Adam(lr=0.01)
+model.compile(loss='mse', optimizer=optimizer)
+
+
+model.fit(x_train.reshape(-1, 1), y_train, epochs=1000, verbose=0)
+
+
+x_test = np.linspace(-1, 1, 100)
+
+
+y_pred = model.predict(x_test.reshape(-1, 1))
+
+
+plt.figure(figsize=(8, 6))
+plt.plot(x_test, f(x_test), label='True function')
+plt.plot(x_test, y_pred, label='Model solution')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend()
+plt.show()
