@@ -1,0 +1,45 @@
+import  tensorflow as tf
+
+class PAT3(tf.keras.layers.Layer):
+    def __init__(self):
+        super(PAT3, self).__init__()
+        self.a0 = tf.Variable(initial_value=1.0, trainable=True, dtype=tf.float32)
+        self.a1 = tf.Variable(initial_value=1.0, trainable=True, dtype=tf.float32)
+        self.a2 = tf.Variable(initial_value=2.0, trainable=True, dtype=tf.float32)
+        self.a3 = tf.Variable(initial_value=3.0, trainable=True, dtype=tf.float32)
+
+
+
+    def call(self, inputs):
+        return self.a0 + self.a1 * inputs + self.a2 * tf.pow(inputs, 2) + self.a3 * tf.pow(inputs, 3)
+
+#Inicializamos la capa
+polynomial_layer = PAT3()
+
+# Crea las input and labeled data en el intervalo [-1, 1]
+num_points = 1000
+input_data = tf.linspace(-1, 1, num_points)
+true_output_data = tf.math.cos(2 * input_data)
+
+# Prepare los datos para el entrenamiento 
+dataset = tf.data.Dataset.from_tensor_slices((input_data, true_output_data))
+dataset = dataset.batch(32)
+
+# cargar el model, optimizer, and loss function
+model = tf.keras.Sequential([polynomial_layer])
+model.compile(loss="mse", optimizer=tf.keras.optimizers.Adagrad(learning_rate=0.1))
+
+# Train the model
+model.fit(dataset, epochs=500)
+
+# Plot results
+x_points = np.linspace(-1, 1, 1000)
+y_points = polynomial_layer(tf.constant(x_points, dtype=tf.float32)).numpy()
+plt.plot(x_points, np.cos(2 * x_points), label="cos(2x)")
+plt.plot(x_points, y_points, label="Ajuste polinomial")
+plt.title("Polinomio de 3er grado ajustado a cos(2x), sobre [-1, 1]")
+plt.xlabel("x")
+plt.ylabel("y = f(x)")
+plt.legend()
+plt.grid(True)
+plt.show()
