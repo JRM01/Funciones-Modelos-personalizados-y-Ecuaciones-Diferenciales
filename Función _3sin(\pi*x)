@@ -1,0 +1,41 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
+
+# Definiendo la funcion
+def f(x):
+    return 3 * np.sin(np.pi * x)
+
+# Generando training data
+x_train = np.linspace(-1, 1, 1000)
+y_train = f(x_train)
+
+# Define el modelo de red neuronal
+model = Sequential()
+model.add(Dense(64, activation='relu', input_shape=(1,)))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(1))
+
+# Compilando the model
+optimizer = Adam(lr=0.01)
+model.compile(loss='mse', optimizer=optimizer)
+
+# entrenando the model
+model.fit(x_train.reshape(-1, 1), y_train, epochs=1000, verbose=0)
+
+# Generando test data
+x_test = np.linspace(-1, 1, 100)
+
+# Evaluando el modelo con los test data
+y_pred = model.predict(x_test.reshape(-1, 1))
+
+# Plot the funcion
+plt.figure(figsize=(8, 6))
+plt.plot(x_test, f(x_test), label='True function')
+plt.plot(x_test, y_pred, label='Model solution')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend()
+plt.show()
