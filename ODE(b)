@@ -1,0 +1,65 @@
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import RMSprop
+import matplotlib.pyplot as plt
+
+class ODEsolver(Sequential):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.loss_tracker = tf.keras.metrics.Mean(name="loss")
+        self.mse = tf.keras.losses.MeanSquaredError()
+
+    @property
+    def metrics(self):
+        return [self.loss_tracker]
+
+    def train_step(self, data):
+        batch_size = tf.shape(data)[0]
+        min_val = tf.constant(-5.0, dtype=tf.float32)  # Definir los valores mínimo y máximo para x
+        max_val = tf.constant(5.0, dtype=tf.float32)
+
+        # Generar valores aleatorios para x dentro del rango especificado
+        x = tf.random.uniform((batch_size, 1), minval=min_val, maxval=max_val)
+
+        with tf.GradientTape() as tape:
+            with tf.GradientTape() as tape2:
+                tape2.watch(x)
+                y_pred = self(x, training=True)
+            dy = tape2.gradient(y_pred, x)
+
+            # Definir condiciones iniciales
+            y_o = tf.constant(1.0, dtype=tf.float32)  # y(0) = 1
+            yp_o = tf.constant(-0.5, dtype=tf.float32)  # y'(0) = -0.5
+
+            # Calcular la ecuación diferencial y la condición inicial
+            eq = tf.math.square(dy) + y_pred  # y'' = -y
+            ic = tf.math.subtract(y_pred, y_o)  # y(x_0) - y_0
+            ic_prime = tf.math.subtract(dy, yp_o)  # y'(x_0) - y'_0
+
+            # Calcular la pérdida
+            loss = self.mse(0.0, eq) + self.mse(0.0, ic) + self.mse(0.0, ic_prime)
+
+        # Calcular gradientes y aplicarlos
+        grads = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+
+model = ODEsolver()
+model.add(Dense(10, activation='tanh', input_shape=(1,)))
+model.add(Dense(1,activation='tanh'))
+model.add(Dense(1))
+
+model.summary()
+
+model.compile(optimizer=RMSprop(),metrics=['loss'])
+
+x=tf.linspace(-5,5,100)
+history = model.fit(x,epochs=1000,verbose=0)
+plt.plot(history.history["loss"])
+
+x_testv = tf.linspace(-5,5,100)
+a=model.predict(x_testv)
+plt.plot(x_testv,a,label="aprox")
+plt.plot(x_testv,tf.cos(x) - (tf.sin(x))/2,label="exact")
+plt.legend()
+plt.show()
